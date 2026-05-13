@@ -8,3 +8,4 @@ jinja2
 imblearn
 sdv
 xgboost
+tensorflow
