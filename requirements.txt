@@ -9,3 +9,4 @@ imblearn
 sdv
 xgboost
 tensorflow
+pyarrow
