@@ -1,0 +1,9 @@
+matplotlib
+fastparquet
+pyarrow
+scipy
+s3fs
+boto3
+sagemaker
+numpy
+seaborn
