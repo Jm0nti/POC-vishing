@@ -10,3 +10,4 @@ seaborn
 pandas
 ipykernel
 scikit-learn
+xgboost
