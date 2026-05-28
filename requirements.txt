@@ -4,11 +4,11 @@ pyarrow
 scipy
 s3fs
 boto3
-sagemaker
+sagemaker<3
 numpy
 seaborn
 pandas
 ipykernel
 scikit-learn
 xgboost
-pytorch
+torch
