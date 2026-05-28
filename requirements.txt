@@ -11,3 +11,4 @@ pandas
 ipykernel
 scikit-learn
 xgboost
+pytorch
