@@ -321,10 +321,4 @@ Vishing_synth_data_GenAI/
 
 ---
 
-## Notas Técnicas Relevantes
 
-**Desbalance de clases:** El problema tiene desbalance severo (95:5 en datos originales, 98.5:1.5 en datos aumentados). En detección de fraude es preferible priorizar Recall sobre Precision (mejor capturar fraude a costa de falsos positivos). Los modelos se optimizan con umbral variable (no fijo en 0.5) calculado por maximización de F1 en la curva Precision-Recall.
-
-**Augmentación vs SMOTE:** La augmentación del Notebook 4 usa descomposición de Cholesky para preservar la estructura de correlación multivariada entre features, mientras que SMOTE solo garantiza coherencia a nivel univariante. Esto resulta en muestras más realistas para entrenamiento.
-
-**Infraestructura AWS:** Los notebooks 4 y 7 se ejecutaron en AWS SageMaker (instancia GPU) por el volumen de datos (1M filas) y el costo computacional del entrenamiento de 48 modelos. Los modelos serializados se almacenan en S3 (`s3://poc-fraude-vishing/`) y se cargan para inferencia local o desde SageMaker.
