@@ -24,6 +24,11 @@ El objetivo es detectar si un usuario está siendo víctima de vishing: una llam
 
 El diccionario completo de variables se encuentra en `raw_data/diccionario_datos_biocatch_sintetico.md`.
 
+### ¿Cómo se creó el dataset?
+
+A partir de información en los portales de BioCatch donde se exponen tendencias de fraude y diferentes vectores de riesgo se llegó a un conjunto de variables sobre comportamiento relevantes para vishing. Explícitamente esta organización no habla sobre cómo recolecta o cuáles específicamente son las variables que usa, pero si habla en alto nivel sobre qué tipos de comportamiento pueden dar indicios de vishing en una sesión; Es a partir de estos supuestos que se generó un dataset con sesiones que simulan comportamientos tanto legítimos como de vishing con la ayuda de IA Generativa (Claude).
+
+
 ### Grupos de Variables
 
 **1. Dinámica de teclado (5 variables)**
