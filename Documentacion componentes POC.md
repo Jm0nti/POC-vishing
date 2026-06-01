@@ -309,5 +309,3 @@ El modelo se distribuye como un `VishingModelWrapper` que encapsula modelo + sca
 | **Total** | **~$36/mes** | **~$4/mes** |
 
 ---
-
-*Área de Innovación · Arquitectura de Innovación · 2025*
