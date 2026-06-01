@@ -313,12 +313,4 @@ Vishing_synth_data_GenAI/
 
 ---
 
-## Posibles Mejoras (Mejorar.md)
-
-- **Eliminar** `screens_visited` y `unusual_screen_visits` por señal baja o derivabilidad
-- **Revisar** `phone_call_active`: una app bancaria real no tiene acceso a si hay una llamada activa. Evaluar si se elimina o se reemplaza por un proxy comportamental
-- **Agregar** `background_switch_count`: número de veces que el usuario sale de la app durante la sesión, lo que indicaría que está consultando información en otra app siguiendo instrucciones del atacante
-
----
-
 
