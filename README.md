@@ -67,7 +67,7 @@ Monto, si el beneficiario es nuevo, tiempo hasta la transacción. Las sesiones d
 
 ## Estructura del Pipeline
 
-El proyecto tiene tres fases principales:
+El proyecto tiene cuatro fases principales:
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
@@ -88,11 +88,17 @@ El proyecto tiene tres fases principales:
   7_Modeling_Vishing_AD_AWS_exec v2.ipynb
 
 ┌────────────────────────────────────────────────────────────────┐
-│ FASE 3 — Validación e inferencia                               │
+│ FASE 3 — Experimentación dirigida con XGBoost (AWS SageMaker)  │
 └────────────────────────────────────────────────────────────────┘
         ↓
-  Get_Features_List.ipynb
-  8_Inference_Test v2.ipynb
+  9_XGBoost_training_exec.ipynb
+
+┌────────────────────────────────────────────────────────────────┐
+│ FASE 4 — Generación de datos para simulación de inferencia     │
+│          (AWS SageMaker)                                       │
+└────────────────────────────────────────────────────────────────┘
+        ↓
+  10_Inference_Data_Generation.ipynb
 ```
 
 ---
@@ -236,32 +242,42 @@ Los modelos se serializan con joblib y se almacenan en S3: `s3://poc-fraude-vish
 
 ---
 
-### 8. `Get_Features_List.ipynb` — Lista de features finales (local)
+### 8. `9_XGBoost_training_exec.ipynb` — Experimentación dirigida con XGBoost (AWS SageMaker)
 
-**Entrada:** `data/augmented_data/dataset_1M_vishing_.parquet`
+**Entrada:** 13 datasets de data aumentada (12 balanceados del Notebook 6 + raw 1M) + 13 datasets de data original (12 balanceados del Notebook 2 + raw 50K)
+**Salida:** 182 modelos serializados en S3 como `VishingModelWrapper`
 
-Utilidad simple que extrae y documenta la lista definitiva de las **44 variables** usadas en el modelado, eliminando identificadores, features de BioCatch (que causarían data leakage), variables derivadas redundantes y la variable objetivo.
+Tras confirmar en el Notebook 7 que XGBoost es el algoritmo con mejor desempeño, este notebook profundiza explorando **7 variantes de hiperparámetros** del algoritmo, entrenadas sobre ambos tipos de dataset (original y aumentado) con holdouts separados (10K y 200K sesiones respectivamente):
 
-Variables eliminadas: `session_id`, `customer_id`, `session_timestamp`, `device_type`, `os_type`, `app_version`, todos los scores de BioCatch, `days_to_claim`, `claim_category`, `screens_visited`, `unusual_screen_visits`, `is_synthetic`, `interactions_per_s`, `is_vishing`.
+| Variante | Descripción |
+|---|---|
+| `xgb_base` | Configuración igual al Notebook 7 (línea base) |
+| `xgb_deep` | Árboles más profundos, más estimadores, learning rate bajo |
+| `xgb_shallow` | Árboles poco profundos, muchos estimadores (boosting clásico) |
+| `xgb_regularized` | Regularización fuerte (L1 + L2 + min_child_weight alto) |
+| `xgb_balanced` | `scale_pos_weight` calculado dinámicamente según el desbalance real de cada dataset |
+| `xgb_conservative` | Subsampling agresivo (subsample + colsample_bytree + gamma) |
+| `xgb_slow_learner` | Learning rate muy bajo (0.01) con 500 estimadores |
+
+**Total de combinaciones:** 7 variantes × 13 datasets × 2 tipos de data = **182 modelos**, cada uno empaquetado en `VishingModelWrapper` (mismo wrapper del Notebook 7) y subido a `s3://poc-fraude-vishing/proyecto/modelos_xgb/{tipo_data}/{variante}/{tecnica}/{ratio}.pkl`.
+
+Incluye análisis comparativo de las 182 combinaciones: tabla ordenada por PR-AUC, mejor configuración por variante, heatmaps variante × técnica de balanceo, matriz de confusión, curva Precision-Recall y feature importance del mejor modelo global.
+
+**Mejor resultado obtenido:** `xgb_deep` sobre datos originales con Random Oversampling al 25% (PR-AUC ≈ 0.95, Recall ≈ 0.88, F1 ≈ 0.90).
 
 ---
 
-### 9. `8_Inference_Test v2.ipynb` — Test de inferencia (local)
+### 9. `10_Inference_Data_Generation.ipynb` — Generación de datos para simulación de inferencia (AWS SageMaker)
 
-**Entrada:** `VishingModelWrapper` cargado desde S3 + sesiones de prueba
+**Entrada:** `raw_data/biocatch_sinthetic_data.csv` (50K, usado solo como referencia estadística)
+**Salida:** `data/inference_simulation/inference_100k.parquet` (100K sesiones 100% sintéticas)
 
-Valida el pipeline completo de inferencia de extremo a extremo:
+Genera un dataset de **100,000 sesiones completamente sintéticas** (ninguna fila proviene del dataset original) para simular un flujo realista de inferencia en producción:
 
-1. Carga el wrapper desde S3 e inspecciona sus metadatos
-2. Corre predicciones sobre 5 sesiones legítimas + 5 de vishing reales del dataset aumentado, comparando con ground truth
-3. Construye y evalúa tres perfiles sintéticos de prueba:
-   - **Legítimo:** sin llamada activa, tipeo normal, pocas correcciones, monto ~150K COP
-   - **Vishing:** llamada activa, tipeo lento, muchas correcciones, monto ~9.2M COP
-   - **Ambiguo:** señales mixtas (llamada activa pero monto moderado)
-4. Demuestra los tres métodos de la API del wrapper
-5. Procesamiento batch (lista de JSONs → lista de resultados)
-6. Validación de manejo de errores (features faltantes, tipos inválidos)
-7. Visualizaciones: barras de probabilidades, radar chart de perfiles de riesgo
+- Reutiliza el `CorrelatedAugmenter` del Notebook 4 sin modificaciones, entrenando un augmenter independiente por clase (legítima / vishing) sobre el dataset original como referencia
+- Distribución objetivo: **98,500 legítimas + 1,500 vishing (~1.5% vishing)**, consistente con el desbalance del dataset aumentado de 1M
+- Añade `session_id` sintéticos (`INF-0000001`, ...) y `session_timestamp` distribuidos entre junio y noviembre de 2025 para simular sesiones reales
+- Valida la calidad de la generación comparando distribuciones de features clave (`typing_speed_cps`, `hesitation_count`, `segmented_typing_ratio`, `data_familiarity_score`, `input_correction_count`, `transaction_amount_cop`) entre el dataset original y el sintético
 
 ---
 
@@ -276,8 +292,8 @@ Valida el pipeline completo de inferencia de extremo a extremo:
 | `5_EDA_augmented_data.ipynb` | Local | 1M parquet | Análisis comparativo |
 | `6_Data_Balancing_AD_Pipeline.ipynb` | Local | 1M parquet | 12 parquets balanceados |
 | `7_Modeling_Vishing_AD_AWS_exec v2.ipynb` | **AWS** | 12 parquets + holdout | 48 wrappers en S3 |
-| `Get_Features_List.ipynb` | Local | 1M parquet | Lista de 44 features |
-| `8_Inference_Test v2.ipynb` | Local | Wrapper S3 + JSONs | Predicciones y validaciones |
+| `9_XGBoost_training_exec.ipynb` | **AWS** | 26 datasets (orig + aumentado) + holdouts | 182 wrappers XGBoost en S3 |
+| `10_Inference_Data_Generation.ipynb` | **AWS** | 50K CSV (referencia) | 100K parquet 100% sintético |
 
 ---
 
@@ -302,6 +318,8 @@ Vishing_synth_data_GenAI/
 │           ├── smote/{10,20,25}.parquet
 │           ├── borderline_smote/{10,20,25}.parquet
 │           └── smote_undersampling/{10,20,25}.parquet
+│   └── inference_simulation/
+│       └── inference_100k.parquet                     ← Dataset 100% sintético para simular inferencia
 ├── modelos/                                           ← Modelos locales (espejo de S3)
 ├── 1_EDA.ipynb
 ├── 2_Data_Balancing_Pipeline.ipynb
@@ -310,8 +328,8 @@ Vishing_synth_data_GenAI/
 ├── 5_EDA_augmented_data.ipynb
 ├── 6_Data_Balancing_AD_Pipeline.ipynb
 ├── 7_Modeling_Vishing_AD_AWS_exec v2.ipynb
-├── 8_Inference_Test v2.ipynb
-├── Get_Features_List.ipynb
+├── 9_XGBoost_training_exec.ipynb
+├── 10_Inference_Data_Generation.ipynb
 ├── Mejorar.md                                         ← Notas de mejoras pendientes
 └── requirements.txt
 ```
