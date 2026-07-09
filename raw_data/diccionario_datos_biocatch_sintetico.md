@@ -1,198 +1,198 @@
-# Diccionario de Datos — Dataset Sintético BioCatch para Detección de Vishing
+# Data Dictionary — Synthetic BioCatch Dataset for Vishing Detection
 
-## Información General
+## General Information
 
-| Concepto | Detalle |
+| Concept | Detail |
 |---|---|
-| Total de sesiones | 50,000 |
-| Sesiones de vishing | 2,500 (5.0%) |
-| Sesiones legítimas | 47,500 (95.0%) |
-| Período simulado | Junio 2024 – Mayo 2025 |
-| Columnas | 61 |
+| Total sessions | 50,000 |
+| Vishing sessions | 2,500 (5.0%) |
+| Legitimate sessions | 47,500 (95.0%) |
+| Simulated period | June 2024 – May 2025 |
+| Columns | 61 |
 
 ---
 
-## 1. Identificadores y Contexto de Sesión
+## 1. Identifiers and Session Context
 
-| Columna | Tipo | Descripción |
+| Column | Type | Description |
 |---|---|---|
-| `session_id` | string | ID único de sesión (SES-XXXXXX) |
-| `customer_id` | string | ID del cliente (CUS-XXXXX). Un cliente puede tener múltiples sesiones |
-| `session_timestamp` | datetime | Fecha y hora de inicio de la sesión |
-| `device_type` | string | Tipo de dispositivo: `mobile` (85%) o `web` (15%) |
-| `os_type` | string | Sistema operativo: Android, iOS, Windows, macOS |
-| `app_version` | string | Versión de la app MiBancolombia simulada |
+| `session_id` | string | Unique session ID (SES-XXXXXX) |
+| `customer_id` | string | Customer ID (CUS-XXXXX). A customer can have multiple sessions |
+| `session_timestamp` | datetime | Session start date and time |
+| `device_type` | string | Device type: `mobile` (85%) or `web` (15%) |
+| `os_type` | string | Operating system: Android, iOS, Windows, macOS |
+| `app_version` | string | Simulated MiBancolombia app version |
 
 ---
 
-## 2. Keystroke Dynamics (Comportamiento Físico - Tecleo)
+## 2. Keystroke Dynamics (Physical Behavior - Typing)
 
-Simulan las señales que BioCatch recopila sobre cómo el usuario teclea. En sesiones de vishing, el tecleo es más lento, más variable y muestra patrones de dictado.
+Simulate the signals that BioCatch collects about how the user types. In vishing sessions, typing is slower, more variable, and shows dictation patterns.
 
-| Columna | Tipo | Unidad | Descripción |
+| Column | Type | Unit | Description |
 |---|---|---|---|
-| `avg_keyhold_ms` | float | milisegundos | Duración promedio que una tecla se mantiene presionada |
-| `avg_interkey_latency_ms` | float | milisegundos | Tiempo promedio entre presionar una tecla y la siguiente |
-| `typing_speed_cps` | float | caracteres/seg | Velocidad de tecleo en caracteres por segundo |
-| `keystroke_variability` | float | ratio (0-1) | Variabilidad en el ritmo de tecleo. Valores altos = tecleo irregular |
-| `segmented_typing_ratio` | float | ratio (0-1) | Proporción de tecleo segmentado (patrón de dictado). **Señal clave de vishing**: el estafador dicta datos al cliente |
+| `avg_keyhold_ms` | float | milliseconds | Average duration a key is held down |
+| `avg_interkey_latency_ms` | float | milliseconds | Average time between pressing one key and the next |
+| `typing_speed_cps` | float | characters/sec | Typing speed in characters per second |
+| `keystroke_variability` | float | ratio (0-1) | Variability in typing rhythm. High values = irregular typing |
+| `segmented_typing_ratio` | float | ratio (0-1) | Proportion of segmented typing (dictation pattern). **Key vishing signal**: the scammer dictates data to the customer |
 
 ---
 
-## 3. Touch Dynamics (Comportamiento Físico - Pantalla Táctil)
+## 3. Touch Dynamics (Physical Behavior - Touchscreen)
 
-Señales capturadas por el SDK de BioCatch sobre cómo el usuario toca y desliza en la pantalla.
+Signals captured by the BioCatch SDK about how the user taps and swipes on the screen.
 
-| Columna | Tipo | Unidad | Descripción |
+| Column | Type | Unit | Description |
 |---|---|---|---|
-| `avg_touch_pressure` | float | ratio (0-1) | Presión promedio del dedo en pantalla |
-| `avg_touch_size_px` | float | píxeles | Tamaño promedio del área de contacto del dedo |
-| `swipe_speed_px_s` | float | píxeles/seg | Velocidad promedio de gestos de deslizamiento |
-| `swipe_directional_variance` | float | ratio (0-1) | Variabilidad en la dirección de swipes. Alto = deslizamientos erráticos |
-| `scroll_speed_avg` | float | píxeles/seg | Velocidad promedio de scroll |
+| `avg_touch_pressure` | float | ratio (0-1) | Average finger pressure on the screen |
+| `avg_touch_size_px` | float | pixels | Average size of the finger's contact area |
+| `swipe_speed_px_s` | float | pixels/sec | Average speed of swipe gestures |
+| `swipe_directional_variance` | float | ratio (0-1) | Variability in swipe direction. High = erratic swipes |
+| `scroll_speed_avg` | float | pixels/sec | Average scroll speed |
 
 ---
 
-## 4. Acelerómetro y Giroscopio (Sensores del Dispositivo)
+## 4. Accelerometer and Gyroscope (Device Sensors)
 
-BioCatch captura datos de los sensores del teléfono para perfilar cómo el usuario sostiene y mueve el dispositivo.
+BioCatch captures data from the phone's sensors to profile how the user holds and moves the device.
 
-| Columna | Tipo | Unidad | Descripción |
+| Column | Type | Unit | Description |
 |---|---|---|---|
-| `device_tilt_angle_mean` | float | grados (0-90) | Ángulo promedio de inclinación del dispositivo |
-| `device_tilt_variability` | float | grados | Variabilidad en el ángulo de inclinación. Alto = movimiento nervioso |
-| `gyro_rotation_rate_mean` | float | rad/s | Tasa promedio de rotación del dispositivo |
-| `accelerometer_jerk_mean` | float | m/s³ | Cambio promedio de aceleración (sacudidas del teléfono) |
-| `phone_motion_events` | int | conteo | Número de eventos de movimiento significativo del teléfono |
+| `device_tilt_angle_mean` | float | degrees (0-90) | Average device tilt angle |
+| `device_tilt_variability` | float | degrees | Variability in tilt angle. High = nervous movement |
+| `gyro_rotation_rate_mean` | float | rad/s | Average device rotation rate |
+| `accelerometer_jerk_mean` | float | m/s³ | Average change in acceleration (phone shaking) |
+| `phone_motion_events` | int | count | Number of significant phone motion events |
 
 ---
 
-## 5. Señales Cognitivas — Hesitación
+## 5. Cognitive Signals — Hesitation
 
-Indicadores de estados de duda, confusión o espera de instrucciones. **Centrales para detección de vishing.**
+Indicators of doubt, confusion, or waiting for instructions. **Central to vishing detection.**
 
-| Columna | Tipo | Unidad | Descripción |
+| Column | Type | Unit | Description |
 |---|---|---|---|
-| `hesitation_count` | int | conteo | Número de pausas significativas (>1s) durante la sesión |
-| `avg_hesitation_duration_s` | float | segundos | Duración promedio de cada hesitación |
-| `max_hesitation_duration_s` | float | segundos | Hesitación más larga en la sesión |
+| `hesitation_count` | int | count | Number of significant pauses (>1s) during the session |
+| `avg_hesitation_duration_s` | float | seconds | Average duration of each hesitation |
+| `max_hesitation_duration_s` | float | seconds | Longest hesitation in the session |
 
 ---
 
-## 6. Señales Cognitivas — Dead Time (Inactividad)
+## 6. Cognitive Signals — Dead Time (Inactivity)
 
-Períodos sin actividad en la sesión. En vishing, el cliente tiene largos períodos de inactividad mientras escucha instrucciones por teléfono.
+Periods without activity in the session. In vishing, the customer has long periods of inactivity while listening to instructions over the phone.
 
-| Columna | Tipo | Unidad | Descripción |
+| Column | Type | Unit | Description |
 |---|---|---|---|
-| `dead_time_periods` | int | conteo | Número de períodos sin actividad (>3 segundos) |
-| `total_dead_time_s` | float | segundos | Tiempo total de inactividad en la sesión |
-| `dead_time_ratio` | float | ratio (0-1) | Proporción de la sesión en inactividad |
+| `dead_time_periods` | int | count | Number of periods without activity (>3 seconds) |
+| `total_dead_time_s` | float | seconds | Total inactivity time in the session |
+| `dead_time_ratio` | float | ratio (0-1) | Proportion of the session spent inactive |
 
 ---
 
-## 7. Señales Cognitivas — Navegación en la App
+## 7. Cognitive Signals — In-App Navigation
 
-Cómo el usuario navega dentro de MiBancolombia. En vishing, el cliente navega erráticamente siguiendo instrucciones.
+How the user navigates within MiBancolombia. In vishing, the customer navigates erratically following instructions.
 
-| Columna | Tipo | Unidad | Descripción |
+| Column | Type | Unit | Description |
 |---|---|---|---|
-| `screens_visited` | int | conteo | Total de pantallas visitadas (incluye repeticiones) |
-| `unique_screens_visited` | int | conteo | Pantallas únicas visitadas |
-| `unusual_screen_visits` | int | conteo | Visitas a secciones que el usuario normalmente no accede |
-| `navigation_back_count` | int | conteo | Número de veces que el usuario retrocede en la navegación |
-| `screen_transition_time_avg_s` | float | segundos | Tiempo promedio entre cambio de pantalla |
+| `screens_visited` | int | count | Total screens visited (includes repetitions) |
+| `unique_screens_visited` | int | count | Unique screens visited |
+| `unusual_screen_visits` | int | count | Visits to sections the user does not normally access |
+| `navigation_back_count` | int | count | Number of times the user navigates back |
+| `screen_transition_time_avg_s` | float | seconds | Average time between screen changes |
 
 ---
 
-## 8. Señales Cognitivas — Errores y Correcciones
+## 8. Cognitive Signals — Errors and Corrections
 
-Indicadores de que el usuario no está seguro de lo que ingresa. **Clave para vishing**: el cliente comete errores al ingresar datos dictados.
+Indicators that the user is unsure of what they are entering. **Key for vishing**: the customer makes errors when entering dictated data.
 
-| Columna | Tipo | Unidad | Descripción |
+| Column | Type | Unit | Description |
 |---|---|---|---|
-| `input_error_count` | int | conteo | Total de errores de entrada durante la sesión |
-| `input_correction_count` | int | conteo | Total de correcciones realizadas |
-| `amount_field_corrections` | int | conteo | Correcciones específicas en campos de monto |
-| `beneficiary_field_corrections` | int | conteo | Correcciones en campos del beneficiario |
-| `copy_paste_events` | int | conteo | Eventos de copiar/pegar durante la sesión |
+| `input_error_count` | int | count | Total input errors during the session |
+| `input_correction_count` | int | count | Total corrections made |
+| `amount_field_corrections` | int | count | Corrections specifically in amount fields |
+| `beneficiary_field_corrections` | int | count | Corrections in beneficiary fields |
+| `copy_paste_events` | int | count | Copy/paste events during the session |
 
 ---
 
-## 9. Señales Cognitivas — Familiaridad y Doodling
+## 9. Cognitive Signals — Familiarity and Doodling
 
-| Columna | Tipo | Unidad | Descripción |
+| Column | Type | Unit | Description |
 |---|---|---|---|
-| `data_familiarity_score` | float | ratio (0-1) | Score de familiaridad con los datos ingresados. Bajo = datos desconocidos para el usuario (dictados) |
-| `doodling_events` | int | conteo | Movimientos de toque sin propósito (touch/mouse doodling), indica ansiedad o espera |
+| `data_familiarity_score` | float | ratio (0-1) | Familiarity score with the entered data. Low = data unknown to the user (dictated) |
+| `doodling_events` | int | count | Purposeless touch movements (touch/mouse doodling), indicates anxiety or waiting |
 
 ---
 
-## 10. Contexto de Sesión
+## 10. Session Context
 
-| Columna | Tipo | Unidad | Descripción |
+| Column | Type | Unit | Description |
 |---|---|---|---|
-| `session_duration_s` | float | segundos | Duración total de la sesión |
-| `hour_of_day` | int | hora (0-23) | Hora del día en que inició la sesión |
-| `is_atypical_hour` | int | binario | 1 si la sesión fue en horario atípico (22:00–05:00) |
-| `phone_call_active` | int | binario | **1 si había llamada telefónica activa durante la sesión.** Señal más fuerte de vishing (85% de sesiones vishing) |
-| `call_overlap_duration_s` | float | segundos | Duración de la llamada superpuesta con la sesión bancaria |
-| `remote_access_tool_detected` | int | binario | 1 si se detectó herramienta de acceso remoto (RAT) |
-| `suspicious_app_detected` | int | binario | 1 si se detectó app sospechosa activa |
+| `session_duration_s` | float | seconds | Total session duration |
+| `hour_of_day` | int | hour (0-23) | Hour of the day the session started |
+| `is_atypical_hour` | int | binary | 1 if the session was during atypical hours (22:00–05:00) |
+| `phone_call_active` | int | binary | **1 if there was an active phone call during the session.** Strongest vishing signal (85% of vishing sessions) |
+| `call_overlap_duration_s` | float | seconds | Duration of the call overlapping with the banking session |
+| `remote_access_tool_detected` | int | binary | 1 if a remote-access tool (RAT) was detected |
+| `suspicious_app_detected` | int | binary | 1 if an active suspicious app was detected |
 
 ---
 
-## 11. Datos de Transacción
+## 11. Transaction Data
 
-| Columna | Tipo | Unidad | Descripción |
+| Column | Type | Unit | Description |
 |---|---|---|---|
-| `transaction_attempted` | int | binario | 1 si se intentó una transacción en la sesión |
-| `transaction_amount_cop` | int | COP | Monto de la transacción en pesos colombianos |
-| `is_new_beneficiary` | int | binario | 1 si el beneficiario de la transacción era nuevo |
-| `time_to_transaction_s` | float | segundos | Tiempo desde inicio de sesión hasta la transacción |
+| `transaction_attempted` | int | binary | 1 if a transaction was attempted in the session |
+| `transaction_amount_cop` | int | COP | Transaction amount in Colombian pesos |
+| `is_new_beneficiary` | int | binary | 1 if the transaction beneficiary was new |
+| `time_to_transaction_s` | float | seconds | Time from session start to the transaction |
 
 ---
 
-## 12. Scores BioCatch Simulados
+## 12. Simulated BioCatch Scores
 
-Simulan los outputs que BioCatch devuelve vía API al banco.
+Simulate the outputs that BioCatch returns to the bank via API.
 
-| Columna | Tipo | Rango | Descripción |
+| Column | Type | Range | Description |
 |---|---|---|---|
-| `biocatch_risk_score` | int | 0–1000 | Score de riesgo general de la sesión |
-| `biocatch_genuine_score` | int | 0–1000 | Score de confianza de que el usuario es genuino |
-| `biocatch_ato_indicator` | int | binario | Indicador de Account Takeover |
-| `biocatch_social_eng_indicator` | int | binario | Indicador de ingeniería social detectada |
-| `biocatch_bot_indicator` | int | binario | Indicador de actividad de bot |
+| `biocatch_risk_score` | int | 0–1000 | Overall session risk score |
+| `biocatch_genuine_score` | int | 0–1000 | Confidence score that the user is genuine |
+| `biocatch_ato_indicator` | int | binary | Account Takeover indicator |
+| `biocatch_social_eng_indicator` | int | binary | Detected social-engineering indicator |
+| `biocatch_bot_indicator` | int | binary | Bot activity indicator |
 
 ---
 
-## 13. Features Derivadas
+## 13. Derived Features
 
-| Columna | Tipo | Descripción |
+| Column | Type | Description |
 |---|---|---|
-| `errors_per_minute` | float | Tasa de errores por minuto de sesión |
-| `interactions_per_s` | float | Interacciones por segundo (flujo general) |
-| `hesitation_composite` | float | Score compuesto: (hesitation_count × avg_duration) / session_duration |
+| `errors_per_minute` | float | Error rate per minute of session |
+| `interactions_per_s` | float | Interactions per second (overall flow) |
+| `hesitation_composite` | float | Composite score: (hesitation_count × avg_duration) / session_duration |
 
 ---
 
-## 14. Labels (Variable Objetivo + Metadata de Reclamo)
+## 14. Labels (Target Variable + Claim Metadata)
 
-| Columna | Tipo | Descripción |
+| Column | Type | Description |
 |---|---|---|
-| `is_vishing` | int | **Variable objetivo**: 1 = sesión de vishing confirmado, 0 = sesión legítima |
-| `days_to_claim` | int | Días entre la sesión y el reclamo del cliente (-1 si no aplica) |
-| `claim_category` | string | Categoría del reclamo: `vishing`, `ingenieria_social_telefonica`, `fraude_telefono`, `none` |
+| `is_vishing` | int | **Target variable**: 1 = confirmed vishing session, 0 = legitimate session |
+| `days_to_claim` | int | Days between the session and the customer's claim (-1 if not applicable) |
+| `claim_category` | string | Claim category: `vishing`, `ingenieria_social_telefonica`, `fraude_telefono`, `none` |
 
 ---
 
-## Notas sobre el Diseño del Dataset
+## Notes on the Dataset Design
 
-1. **Distribuciones diferenciadas**: Cada feature fue generada con distribuciones distintas para sesiones legítimas vs. vishing, basadas en lo que la literatura de BioCatch documenta como indicadores de manipulación por ingeniería social.
+1. **Differentiated distributions**: Each feature was generated with different distributions for legitimate vs. vishing sessions, based on what the BioCatch literature documents as indicators of social-engineering manipulation.
 
-2. **Correlaciones realistas simuladas**: Por ejemplo, sesiones de vishing tienden a tener simultáneamente llamada activa + tecleo segmentado + alta hesitación + sesión larga + beneficiario nuevo.
+2. **Simulated realistic correlations**: For example, vishing sessions tend to simultaneously have an active call + segmented typing + high hesitation + long session + new beneficiary.
 
-3. **Ruido intencional**: No todas las sesiones de vishing tienen todos los indicadores activos (hay overlap con sesiones legítimas), para simular la complejidad real del problema.
+3. **Intentional noise**: Not all vishing sessions have all indicators active (there is overlap with legitimate sessions), to simulate the real complexity of the problem.
 
-4. **Uso sugerido**: El campo `is_vishing` es la variable objetivo para entrenamiento supervisado. Los campos `biocatch_*_score` e `*_indicator` simulan los outputs actuales de BioCatch y pueden excluirse del feature set del modelo propio para evitar data leakage, o incluirse como features complementarios si el objetivo es construir un modelo que combine señales propias con las de BioCatch.
+4. **Suggested use**: The `is_vishing` field is the target variable for supervised training. The `biocatch_*_score` and `*_indicator` fields simulate BioCatch's current outputs and can be excluded from the model's own feature set to avoid data leakage, or included as complementary features if the goal is to build a model that combines its own signals with those of BioCatch.
