@@ -1,77 +1,68 @@
-# Project Documentation: Vishing Detection with Synthetic Biometric Data
+# Detección de Vishing con Datos Biométricos Sintéticos
 
-## General Context
+## Contexto General
 
-This project is a **machine learning pipeline for detecting vishing (voice phishing) sessions** in a banking application, using synthetic behavioral biometric data generated with the help of Claude.
+Este proyecto es un **pipeline de machine learning para detección de sesiones de vishing** (voice phishing) en una aplicación bancaria, usando datos biométricos de comportamiento sintéticos generados con ayuda de IA generativa.
 
-The original dataset was built from assumptions based on the vendor **BioCatch**, which specializes in behavioral data for fraud detection in banking. BioCatch captures signals such as keystroke dynamics, touch pressure, device motion, and navigation patterns to identify anomalous behaviors during banking sessions.
+El dataset original fue construido a partir de supuestos del proveedor **BioCatch**, especializado en datos comportamentales para detección de fraude en banca. BioCatch captura señales como dinámica de teclado, presión táctil, movimiento del dispositivo y patrones de navegación para identificar comportamientos anómalos durante sesiones bancarias.
 
-The goal is to detect whether a user is being victimized by vishing: a phone call in which an attacker guides them to make a fraudulent transfer while they are active in the banking app.
+El objetivo es detectar si un usuario está siendo víctima de vishing: una llamada telefónica en la que un atacante lo guía para realizar una transferencia fraudulenta mientras está activo en la app bancaria. La dificultad estructural del problema es que el usuario opera legítimamente su app, con su dispositivo y credenciales; lo único que difiere es **cómo** interactúa: escribe más lento, hace pausas mientras escucha instrucciones, corrige más campos y tiende a montos más altos.
 
 ---
 
-## Original Dataset
+## Dataset Original
 
-| Characteristic | Value |
+| Característica | Valor |
 |---|---|
-| Source | Synthetic dataset generated with Claude |
-| Total sessions | 50,000 |
-| Legitimate sessions | 47,500 (95%) |
-| Vishing (fraud) sessions | 2,500 (5%) |
-| Total variables | 61 columns |
-| Simulated period | June 2024 – May 2025 |
-| File | `raw_data/biocatch_sinthetic_data.csv` |
+| Fuente | Dataset sintético generado con IA generativa (Claude) |
+| Sesiones totales | 50,000 |
+| Sesiones legítimas | 47,500 (95%) |
+| Sesiones vishing (fraude) | 2,500 (5%) |
+| Clientes únicos | 19,782 |
+| Sesiones por cliente (promedio) | 2.53 |
+| Variables totales | 61 columnas |
+| Periodo simulado | Junio 2024 – Mayo 2025 |
+| Archivo | `raw_data/biocatch_sinthetic_data.csv` |
 
-The full variable dictionary is available in `raw_data/diccionario_datos_biocatch_sintetico.md`.
+El diccionario completo de variables se encuentra en `raw_data/diccionario_datos_biocatch_sintetico.md`.
 
-### How was the dataset created?
+### ¿Cómo se creó el dataset?
 
-Based on information from BioCatch portals that expose fraud trends and different risk vectors, a set of behavioral variables relevant to vishing was defined. This organization does not explicitly disclose how it collects data or which specific variables it uses, but it does describe at a high level which types of behavior can signal vishing during a session. From these assumptions, a dataset was generated with sessions simulating both legitimate and vishing behaviors with the help of Generative AI (Claude).
+BioCatch publica información general sobre los vectores de comportamiento que utiliza para detectar fraude en banca, pero **no divulga las variables exactas ni la forma en la que las computa**. A partir de la documentación pública sobre sus indicadores de riesgo (particularmente para vishing e ingeniería social), se diseñó un conjunto de 61 variables que cubren ocho grupos funcionales y se generó un dataset sintético en el que las sesiones simulan tanto comportamientos legítimos como fraudulentos, usando IA generativa (Claude) como asistente en la construcción.
 
+### Grupos de Variables
 
-### Variable Groups
+1. **Dinámica de teclado (5 variables).** Velocidad de escritura, latencia entre teclas, variabilidad y ratio de escritura segmentada. En sesiones de vishing el usuario escribe más despacio y de forma segmentada porque está dictando lo que le indica el atacante por teléfono.
 
-**1. Keystroke dynamics (5 variables)**
-Typing speed, inter-key latency, variability, and segmented typing ratio. In vishing sessions the user types more slowly and in a segmented way because they are dictating what the attacker tells them over the phone.
+2. **Dinámica táctil (5 variables).** Presión, tamaño de toque, velocidad y varianza de swipes. En vishing suelen ser más erráticos.
 
-**2. Touch dynamics (5 variables)**
-Pressure, touch size, speed, and swipe variance. In vishing they tend to be more erratic.
+3. **Movimiento del dispositivo (5 variables).** Ángulo de inclinación, giroscopio, acelerómetro, eventos de movimiento. Mayor variabilidad en sesiones fraudulentas por el estado de tensión del usuario.
 
-**3. Device motion (5 variables)**
-Tilt angle, gyroscope, accelerometer, motion events. Higher variability in fraudulent sessions due to the user's state of tension.
+4. **Señales de hesitación (3 variables).** Cantidad y duración de pausas. Uno de los mejores indicadores: el usuario en vishing duda antes de ejecutar acciones porque está esperando instrucciones.
 
-**4. Hesitation signals (3 variables)**
-Number and duration of pauses. One of the best indicators: the vishing user hesitates before executing actions because they are waiting for instructions.
+5. **Tiempo muerto / inactividad (3 variables).** Períodos sin interacción. Capturan el tiempo en que el usuario está escuchando al atacante por teléfono.
 
-**5. Dead time / inactivity (3 variables)**
-Periods without interaction. They capture the time the user spends listening to the attacker on the phone.
+6. **Navegación en la app (3 variables).** Pantallas visitadas, conteo de navegación hacia atrás, tiempo de transición. En vishing el usuario puede navegar de forma inusual siguiendo instrucciones.
 
-**6. In-app navigation (3 variables)**
-Screens visited, back-navigation count, transition time. In vishing the user may navigate unusually following instructions.
+7. **Errores y correcciones (4 variables).** Errores de entrada, correcciones en campos de monto y beneficiario, eventos de copiar/pegar. Alta frecuencia en vishing porque el usuario está transcribiendo datos dictados.
 
-**7. Errors and corrections (4 variables)**
-Input errors, corrections in amount and beneficiary fields, copy/paste events. High frequency in vishing because the user is transcribing dictated data.
+8. **Contexto de sesión (5 variables).** Duración, hora del día, si hay llamada telefónica activa, detección de herramientas de acceso remoto, apps sospechosas detectadas.
 
-**8. Session context (5 variables)**
-Duration, time of day, whether there is an active phone call, detection of remote-access tools, suspicious apps detected.
+9. **Datos de transacción (4 variables).** Monto, si el beneficiario es nuevo, tiempo hasta la transacción. Las sesiones de vishing tienden a tener montos más altos y beneficiarios nuevos.
 
-**9. Transaction data (4 variables)**
-Amount, whether the beneficiary is new, time to transaction. Vishing sessions tend to have higher amounts and new beneficiaries.
+10. **Features derivadas y de BioCatch (excluidas del modelado).** `biocatch_risk_score`, `biocatch_genuine_score` y similares se excluyen porque generarían data leakage. `session_id`, `customer_id`, `session_timestamp` e identificadores también se eliminan.
 
-**10. Derived and BioCatch features (excluded from modeling)**
-`biocatch_risk_score`, `biocatch_genuine_score`, and similar are excluded because they would introduce data leakage. `session_id`, `customer_id`, `session_timestamp`, and other identifiers are also removed.
-
-**Final variables for modeling: 44**
+**Variables finales para modelado: 44**
 
 ---
 
-## Pipeline Structure
+## Estructura del Pipeline
 
-The project has four main phases:
+El proyecto se estructura en tres fases principales, más una rama exploratoria con AutoML:
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
-│ PHASE 1 — Original dataset (50K sessions, local execution)     │
+│ FASE 1 — Dataset original (50K sesiones, ejecución local)      │
 └────────────────────────────────────────────────────────────────┘
         ↓
   1_EDA.ipynb
@@ -79,260 +70,394 @@ The project has four main phases:
   3_Modeling_Vishing_Pipeline.ipynb
 
 ┌────────────────────────────────────────────────────────────────┐
-│ PHASE 2 — Data augmentation and retraining (AWS SageMaker)     │
-└────────────────────────────────────────────────────────────────┘
-        ↓
-  4_Biocatch_data_augmentation_AWS.ipynb
-  5_EDA_augmented_data.ipynb
-  6_Data_Balancing_AD_Pipeline.ipynb
-  7_Modeling_Vishing_AD_AWS_exec v2.ipynb
-
-┌────────────────────────────────────────────────────────────────┐
-│ PHASE 3 — Focused experimentation with XGBoost (AWS SageMaker) │
-└────────────────────────────────────────────────────────────────┘
-        ↓
-  9_XGBoost_training_exec.ipynb
-
-┌────────────────────────────────────────────────────────────────┐
-│ PHASE 4 — Data generation for inference simulation             │
+│ FASE 2 — Data augmentation con CTGAN y reentrenamiento         │
 │          (AWS SageMaker)                                       │
 └────────────────────────────────────────────────────────────────┘
         ↓
-  10_Inference_Data_Generation.ipynb
+  4_Biocatch_data_augmentation_CTGAN.ipynb
+  5_EDA_augmented_data.ipynb
+  6_Data_Balancing_AD_Pipeline.ipynb
+  7_Modeling_Vishing_AD.ipynb
+
+┌────────────────────────────────────────────────────────────────┐
+│ FASE 3 — Experimentación dirigida con XGBoost (AWS SageMaker)  │
+└────────────────────────────────────────────────────────────────┘
+        ↓
+  8_XGBoost_training.ipynb
+
+┌────────────────────────────────────────────────────────────────┐
+│ RAMA EXPLORATORIA — AutoML con AutoGluon                       │
+│                     (AWS SageMaker, no adoptada)               │
+└────────────────────────────────────────────────────────────────┘
+        ↓
+  AutoML_Vishing_AutoGluon_EN.ipynb
 ```
 
 ---
 
-## Description of each Notebook
+## Descripción de cada Notebook
 
-### 1. `1_EDA.ipynb` — Exploratory Analysis (local)
+### 1. `1_EDA.ipynb` — Análisis Exploratorio (local)
 
-**Input:** `raw_data/biocatch_sinthetic_data.csv` (50K sessions)
+**Entrada:** `raw_data/biocatch_sinthetic_data.csv` (50K sesiones)
 
-Performs a complete exploratory analysis of the original dataset:
+Análisis exploratorio integral del dataset original. Cubre:
 
-- Integrity validation (nulls, duplicates, types, ranges)
-- Comparison of distributions between legitimate and vishing sessions
-- Mann-Whitney U tests and Cohen's d to identify discriminative features
-- Univariate AUC per variable → top 20 features by predictive power
-- Correlation analysis to detect multicollinearity
-- Bivariate visualizations, radar chart of behavioral profiles
-- PCA to visualize separability in 2D
-- Quick Random Forest with cross-validation (AUC ≈ 0.88)
+- Validación de integridad: nulos, duplicados, tipos, rangos por variable. Sin nulos, sin duplicados, todos los rangos dentro de lo esperado.
+- Distribución del target y variables categóricas (device, claim category, hora del día, mes).
+- Análisis univariante por clase con histogramas para los grupos físico (keystroke, touch), cognitivo (hesitación, familiaridad) y de sesión (correcciones, navegación).
+- Tests estadísticos de separabilidad: Mann-Whitney U, Cohen's d, correlación punto-biserial y AUC univariante por variable.
+- Análisis de variables binarias con chi-cuadrado y odds ratio.
+- Boxplots comparativos por clase para las Top 12 features por AUC.
+- Análisis de correlación (heatmap y detección de pares con |r| > 0.7).
+- Perfil comportamental comparativo (radar chart y tabla mediana por clase).
+- Análisis de transacciones (distribución de montos, beneficiario nuevo, tiempo hasta la transacción).
+- PCA a 10 componentes: scree plot, proyección 2D y análisis de loadings en PC1/PC2.
+- Detección de outliers por IQR con enriquecimiento vs. tasa de vishing.
+- Random Forest rápido con validación cruzada como estimador preliminar de importancia (CV AUC ≈ 0.88).
 
-**Key findings:** The most discriminative features are `phone_call_active`, `segmented_typing_ratio`, `hesitation_count`, `data_familiarity_score`, and `input_correction_count`. Vishing sessions have slower typing, more hesitations, and transaction amounts 1.5-2× higher.
+**Hallazgos clave.** Las features más discriminativas por AUC univariante son `phone_call_active`, `segmented_typing_ratio`, `hesitation_count`, `data_familiarity_score` e `input_correction_count`. Las sesiones de vishing exhiben tipeo más lento y segmentado, más hesitaciones y correcciones, y montos de transacción 2–3× más altos (mediana 384K COP vs 136K COP en legítimas). Chi-cuadrado y odds ratio confirman que `phone_call_active` (OR≈2.01), `remote_access_tool_detected` (OR≈2.57), `suspicious_app_detected` (OR≈2.05) e `is_new_beneficiary` (OR≈1.76) son significativas al 99.9%.
 
 ---
 
-### 2. `2_Data_Balancing_Pipeline.ipynb` — Balancing of original data (local)
+### 2. `2_Data_Balancing_Pipeline.ipynb` — Balanceo del dataset original (local)
 
-**Input:** `raw_data/biocatch_sinthetic_data.csv` (95%:5% imbalance)
-**Output:** 12 balanced datasets in `data/balanced/original/`
+**Entrada:** `raw_data/biocatch_sinthetic_data.csv` (desbalance 95%:5%)
+**Salida:** 12 datasets balanceados en `data/balanced/original/{técnica}/{ratio}.csv`
 
-Applies 4 resampling techniques at 3 target vishing ratios (10%, 20%, 25%):
+Aplica cuatro técnicas de re-muestreo con tres ratios de vishing objetivo (10%, 20%, 25%):
 
-| Technique | Description |
+| Técnica | Descripción |
 |---|---|
-| **Random Oversampling** | Duplicates observations of the minority class |
-| **SMOTE** | Generates synthetic samples by k-NN interpolation |
-| **Borderline SMOTE** | SMOTE focused on decision-boundary examples |
-| **SMOTE + Undersampling** | Hybrid: reduces majority ~10%, increases minority |
+| **Random Oversampling** | Duplica observaciones de la clase minoritaria. |
+| **SMOTE** | Genera muestras sintéticas por interpolación k-NN. |
+| **Borderline SMOTE** | SMOTE enfocado en ejemplos de frontera de decisión. |
+| **SMOTE + Undersampling** | Híbrido: reduce mayoritaria ~10% y aplica SMOTE en la minoritaria. |
 
-Result: 12 variants (4 techniques × 3 ratios) that will feed the modeling step.
+Se generan las 12 variantes (4 técnicas × 3 ratios) que serán insumo del modelado.
 
 ---
 
-### 3. `3_Modeling_Vishing_Pipeline.ipynb` — Modeling on original data (local)
+### 3. `3_Modeling_Vishing_Pipeline.ipynb` — Modelado sobre datos originales (local)
 
-**Input:** 12 balanced datasets + test set (20% holdout, imbalanced)
-**Output:** Comparative metrics, identification of the best model
+**Entrada:** 12 datasets balanceados + holdout del 20% (10K sesiones sin balancear).
+**Salida:** Tabla comparativa de métricas y matriz de confusión del mejor modelo.
 
-Trains 4 algorithms on each of the 12 balanced datasets:
+Entrena cuatro algoritmos sobre cada uno de los 12 datasets balanceados:
 
-| Model | Hyperparameters |
+| Modelo | Hiperparámetros |
 |---|---|
-| Logistic Regression | max_iter=1000 |
-| Random Forest | n_estimators=150, max_depth=10 |
-| XGBoost | max_depth=6, learning_rate=0.1 |
-| MLP (neural network) | Layers 64→32, 300 iterations |
+| Regresión Logística | `max_iter=1000` |
+| Random Forest | `n_estimators=150`, `max_depth=10` |
+| XGBoost | `max_depth=6`, `learning_rate=0.1`, `eval_metric='logloss'` |
+| MLP (red neuronal) | Capas ocultas 64→32, 300 iteraciones |
 
-Evaluation on the imbalanced holdout (47.5K legitimate + 2.5K vishing) with metrics: Recall, Precision, F1, ROC-AUC, and PR-AUC. The best result is obtained by **XGBoost + SMOTE Undersampling at 10%** (PR-AUC ≈ 0.40–0.50).
+Se evalúa sobre el holdout imbalanceado (9,500 legítimas + 500 vishing) con las métricas Recall, Precisión, F1, ROC-AUC y PR-AUC.
 
----
+**Mejor resultado.** XGBoost con SMOTE + Undersampling al 10% en holdout:
 
-### 4. `4_Biocatch_data_augmentation_AWS.ipynb` — Data augmentation (AWS SageMaker)
-
-**Input:** `raw_data/biocatch_sinthetic_data.csv` (50K sessions)
-**Output:** `data/augmented_data/dataset_1M_vishing_.parquet` (1M sessions)
-
-This is the most technical step of the pipeline. It implements the `CorrelatedAugmenter` class to generate 1 million synthetic sessions that preserve the statistical structure of the original dataset:
-
-**Augmentation process:**
-1. Separate data by class (legitimate and vishing)
-2. Estimate the correlation matrix per class
-3. Apply Cholesky decomposition to generate correlated multivariate Gaussian noise
-4. Transform via inverse CDF (quantile matching) to preserve marginal distributions
-5. Add controlled perturbation (`noise_scale=0.03`)
-6. Post-process to respect domain constraints (ranges, types, non-negativity)
-
-**Composition of the augmented dataset (1M):**
-- 47,500 original legitimate sessions (kept intact)
-- 937,500 synthetic legitimate sessions (multiplier 20.7×)
-- 2,500 original vishing sessions (kept intact)
-- 12,500 synthetic vishing sessions (multiplier 6×)
-- **Resulting imbalance:** ~1.5% vishing (closer to production reality than the original 5%)
-
-**Advantage over plain SMOTE:** the augmenter preserves the joint dependencies between variables, not just the individual marginal distributions.
-
----
-
-### 5. `5_EDA_augmented_data.ipynb` — EDA on augmented data (local)
-
-**Input:** `data/augmented_data/dataset_1M_vishing_.parquet` + original dataset (50K)
-
-Validates the quality of the augmentation by comparing the 1M dataset with the original:
-
-- Kolmogorov-Smirnov test per feature (mean difference ≈ 0.077, excellent preservation)
-- Two features with slight drift detected: `transaction_amount_cop` (KS=0.24) and `total_dead_time_s` (KS=0.47)
-- Random Forest on a subsample with CV-AUC ≈ 0.95
-- PCA: the first 5 components explain 42% of variance
-- Confirmation that the most discriminative features keep their power in the augmented dataset
-
----
-
-### 6. `6_Data_Balancing_AD_Pipeline.ipynb` — Balancing on augmented data (local)
-
-**Input:** `data/augmented_data/dataset_1M_vishing_.parquet` (1M, 98.5%:1.5% imbalance)
-**Output:** 12 balanced datasets in `data/balanced/augmented/` (parquet format)
-
-Applies the same 4 resampling techniques at the same 3 target ratios (10%, 20%, 25%) as in Notebook 2, but now on the 1 million session dataset. Files are saved in parquet format for greater efficiency at this scale.
-
-| Technique | Approx. resulting size |
+| Métrica | Valor |
 |---|---|
-| Random Oversampling | 1.09M – 1.31M rows |
-| SMOTE | 1.09M – 1.31M rows |
-| Borderline SMOTE | 1.09M – 1.31M rows |
-| SMOTE + Undersampling | 985K – 1.18M rows |
+| Recall | 0.9400 |
+| Precisión | 0.9419 |
+| F1 | 0.9409 |
+| ROC-AUC | 0.9988 |
+| PR-AUC | 0.9848 |
+
+TN = 9,471 · FP = 29 · FN = 30 · TP = 470. La calidad tan alta se explica en parte por la homogeneidad estadística del dataset sintético; las Fases 2 y 3 introducen mayor exigencia con más datos y desbalance real.
 
 ---
 
-### 7. `7_Modeling_Vishing_AD_AWS_exec v2.ipynb` — Modeling on augmented data (AWS SageMaker)
+### 4. `4_Biocatch_data_augmentation_CTGAN.ipynb` — Augmentación con CTGAN (AWS SageMaker)
 
-**Input:** 12 balanced datasets from Notebook 6 + holdout of 200K sessions
-**Output:** 48 serialized models in S3 as `VishingModelWrapper`
+**Entrada:** `raw_data/biocatch_sinthetic_data.csv` (50K sesiones).
+**Salida:** `data/augmented_data/dataset_1M_vishing_ctgan.parquet` (1M sesiones).
 
-Trains the same 4 algorithms on the 12 balanced datasets of the augmented dataset. Evaluation is done on a holdout of 200K sessions with real imbalance (~1.5% vishing).
+Es el paso más técnico del pipeline. Genera 1 millón de sesiones sintéticas preservando la estructura estadística del dataset original mediante **CTGAN** (Conditional Tabular GAN), el estado del arte para generación de datos tabulares mixtos con features numéricas y categóricas.
 
-**Main innovation — `VishingModelWrapper`:**
+**Motivación.** Una implementación previa basada en copula gaussiano con quantile matching y jitter aditivo era trivialmente distinguible: un clasificador simple sobre originales vs. sintéticos alcanzaba AUC = 1.00 porque el copula no capturaba las dependencias no lineales y el jitter sobre features positivas sesgadas dejaba una firma detectable en las colas. CTGAN aprende directamente las dependencias por adversarial training con condicionamiento por modo, y en la práctica reduce el AUC de distinguibilidad al rango 0.55–0.70.
 
-This class encapsulates everything needed for production inference in a single serializable object:
-- The trained model
-- The scaler (StandardScaler)
-- The exact list of features in the correct order
-- The optimal classification threshold (computed by F1 maximization on the PR curve, not fixed at 0.5)
+**Estrategia.** Un CTGAN por clase (legit y vishing) usando el filtrado a dispositivos `mobile` (42,579 sesiones: 40,452 legítimas + 2,127 vishing) debido a que existen atributos no aplicables a dispositivos desktop y para el contexto del problema sólo interesa analizar comportamiento en dispotivos móviles
+. La clase minoritaria tiene solo 2,127 muestras y necesita hiperparámetros específicos.
 
-The wrapper's API exposes three methods:
-- `predict(json)` → binary label (0/1)
-- `predict_proba_raw(json)` → probabilities `{legitimate, vishing}`
-- `predict_full(json)` → full dictionary with label, probabilities, and threshold used
+**Hiperparámetros de CTGAN (SDV 1.5, entrenado en GPU Tesla T4):**
 
-It accepts as input a Python dict, JSON string, or list of dicts (batch). It validates missing features and raises an explicit `ValueError` on error, with no silent failures.
+| Clase | epochs | batch_size | pac | generator_dim | discriminator_dim | embedding_dim | lr |
+|---|---|---|---|---|---|---|---|
+| Legit   | 300 | 500 | 10 | (256, 256) | (256, 256) | 128 | 2e-4 |
+| Vishing | 800 | 250 |  5 | (128, 128) | (128, 128) |  64 | 1e-4 |
 
-Models are serialized with joblib and stored in S3: `s3://poc-fraude-vishing/proyecto/modelos/{technique}/{ratio}/{model}.pkl`
+La configuración de vishing es más conservadora: red más pequeña (menos overfitting con muestras escasas), `pac` menor (packing de menos filas por evaluación del crítico), batch más pequeño y más épocas para convergencia estable con menos pasos por época.
+
+**Metadata SDV.** Las binarias (`phone_call_active`, `remote_access_tool_detected`, `suspicious_app_detected`, `transaction_attempted`, `is_new_beneficiary`) se declaran como `categorical` para que CTGAN use el condicional discreto (más estable que tratarlas como continuas).
+
+
+**Post-procesamiento tras la generación.** CTGAN produce marginales razonables pero no respeta consistencias lógicas ni constraints de dominio, por lo que se aplica un pipeline post-generación:
+
+- **Constraints de dominio:** clip de ratios a [0,1], enteros no negativos redondeados, binarias en {0,1}, `hour_of_day` en [0,23], `device_tilt_angle_mean` en [0,90].
+- **Consistencias lógicas:** `is_atypical_hour` derivada por regla desde `hour_of_day` ∈ {22,23,0,1,2,3,4,5}; `unique_screens_visited ≤ screens_visited`; `call_overlap_duration_s = 0` si `phone_call_active = 0`; `transaction_amount_cop`, `time_to_transaction_s` e `is_new_beneficiary` a 0 si `transaction_attempted = 0`; `avg_hesitation_duration_s` y `max_hesitation_duration_s` a 0 si `hesitation_count = 0`; `total_dead_time_s` y `dead_time_ratio` a 0 si `dead_time_periods = 0`.
+- **Indicadores BioCatch por condicional empírica** (`biocatch_ato_indicator`, `biocatch_social_eng_indicator`, `biocatch_bot_indicator`): tablas de probabilidad por decil de `biocatch_risk_score`, estimadas sobre el dataset original.
+- **Features derivadas recalculadas** desde las variables generadas: `errors_per_minute`, `interactions_per_s`, `hesitation_composite`.
+- **Metadatos de sesión** (`session_id`, `customer_id`, `session_timestamp`, `device_type='mobile'`, `os_type`, `app_version`, `days_to_claim` y `claim_category`): añadidos post con distribuciones muestrales del dataset original para la clase correspondiente.
+- **Flag `is_synthetic`:** todas las filas generadas por CTGAN quedan marcadas con 1 y las originales retenidas con 0 (permite auditar y hacer splits controlados).
+
+**Composición del dataset aumentado (1M):**
+
+- 40,452 sesiones legítimas originales (retenidas intactas).
+- 944,548 sesiones legítimas generadas por CTGAN.
+- 2,127 sesiones vishing originales (retenidas intactas).
+- 12,873 sesiones vishing generadas por CTGAN.
+- **Desbalance resultante:** 1.5% vishing (más cercano a la realidad productiva que el 5% original), 62 columnas (61 originales + `is_synthetic`).
+
+Los sintetizadores CTGAN entrenados se serializan y suben a S3 (`s3://poc-fraude-vishing/models/ctgan_legit.pkl` y `ctgan_vishing.pkl`) para poder regenerar datos sin re-entrenar.
 
 ---
 
-### 8. `9_XGBoost_training_exec.ipynb` — Focused experimentation with XGBoost (AWS SageMaker)
+### 5. `5_EDA_augmented_data.ipynb` — EDA sobre datos aumentados (local)
 
-**Input:** 13 augmented-data datasets (12 balanced from Notebook 6 + raw 1M) + 13 original-data datasets (12 balanced from Notebook 2 + raw 50K)
-**Output:** 182 serialized models in S3 as `VishingModelWrapper`
+**Entrada:** `data/augmented_data/dataset_1M_vishing_ctgan.parquet` + dataset original 50K para comparación.
 
-After confirming in Notebook 7 that XGBoost is the best-performing algorithm, this notebook goes deeper by exploring **7 hyperparameter variants** of the algorithm, trained on both dataset types (original and augmented) with separate holdouts (10K and 200K sessions respectively):
+Valida la calidad de la augmentación por CTGAN y caracteriza el nuevo dataset:
 
-| Variant | Description |
+- **Integridad:** sin nulos, sin `session_id` duplicados, 89,999 clientes únicos, rango temporal 2024-06-01 → 2025-05-31.
+- **Análisis de `is_synthetic`:** proporción global 95.74% sintéticas vs. 4.26% originales. Contingencia con `is_vishing`: chi² = 3,675, OR = 0.259.
+- **Rangos:** todas las variables dentro de sus rangos válidos tras el post-procesamiento.
+- **Distribuciones por clase** (subsampled a 50K legítimas + todas las vishing): comportamiento físico, cognitivo, sesión.
+- **Separabilidad estadística sobre subsample de 115K filas:** 3 features con efecto grande (|d| ≥ 0.8), 10 medio (≥ 0.5), 23 pequeño (≥ 0.2), 17 negligible. Significancia: 52 de 54 con p < 0.001.
+- **Variables binarias.** `is_new_beneficiary` OR = 2.24, `phone_call_active` OR = 1.63, `suspicious_app_detected` OR = 1.53, `transaction_attempted` OR = 1.36, `remote_access_tool_detected` OR = 1.28. `is_atypical_hour` cambia dirección a OR = 0.82 (contraintuitivo pero se explica por el ruido introducido por CTGAN en la variable derivada por regla).
+- **Correlación.** 4 pares con |r| > 0.7 (multicolinealidad con derivadas): `input_error_count` ↔ `errors_per_minute` (1.00), `hesitation_count` ↔ `hesitation_composite` (0.99), y dos con `interactions_per_s`.
+- **Perfil comportamental comparativo** por mediana: mismo patrón que en el original, con `transaction_amount_cop` en vishing ≈ 379K vs 167K en legítimas.
+- **PCA:** primeras 5 componentes explican 36.8% de varianza; 10 componentes explican 48.3%. PC1 está dominado por señales cognitivas (`interactions_per_s`, `hesitation_count`, `hesitation_composite`, `dead_time_periods`, `segmented_typing_ratio`); PC2 por transacción (`time_to_transaction_s`, `transaction_attempted`, `is_new_beneficiary`).
+- **Outliers por IQR:** `errors_per_minute` enriquece vishing a 12.9% (vs 1.5% global); `interactions_per_s` a 4.8%.
+- **Feature importance preliminar.** Random Forest sobre subsample estratificado (155K filas: 15K vishing + 140K legítimas) con CV-AUC = 1.0000 ± 0.0000, confirmando separabilidad extrema en el dataset aumentado.
+
+**Validación vs. original (test Kolmogorov-Smirnov sobre subsample de 50K):**
+
+| Feature | KS | Interpretación |
+|---|---|---|
+| `session_duration_s` | 0.0000 | Idéntica |
+| `avg_keyhold_ms` | 0.047 | Excelente preservación |
+| `hesitation_count` | 0.048 | Excelente |
+| `unusual_screen_visits` | 0.051 | Excelente |
+| `input_correction_count` | 0.070 | Muy buena |
+| `transaction_amount_cop` | 0.071 | Muy buena |
+| `segmented_typing_ratio` | 0.078 | Buena |
+| `typing_speed_cps` | 0.079 | Buena |
+| `total_dead_time_s` | 0.086 | Buena |
+| `data_familiarity_score` | 0.127 | Drift leve |
+
+CTGAN preserva las distribuciones marginales dentro del rango de fidelidad esperado; solo `data_familiarity_score` presenta drift leve (KS > 0.10). Los deltas de Cohen's d y AUC univariante entre original y aumentado son moderados y no cambian el signo del efecto en ninguna variable relevante.
+
+---
+
+### 6. `6_Data_Balancing_AD_Pipeline.ipynb` — Balanceo sobre datos aumentados (local)
+
+**Entrada:** `data/augmented_data/dataset_1M_vishing_ctgan.parquet` (1M, desbalance 98.5%:1.5%).
+**Salida:** 12 datasets balanceados en `data/balanced/augmented/{técnica}/{ratio}.parquet`.
+
+Aplica las mismas cuatro técnicas de re-muestreo en los mismos tres ratios objetivo (10%, 20%, 25%) que en el Notebook 2, pero ahora sobre el dataset de 1M sesiones. Se usa el formato parquet para mayor eficiencia a esta escala.
+
+| Técnica | Tamaño resultante aprox. |
 |---|---|
-| `xgb_base` | Same configuration as Notebook 7 (baseline) |
-| `xgb_deep` | Deeper trees, more estimators, low learning rate |
-| `xgb_shallow` | Shallow trees, many estimators (classic boosting) |
-| `xgb_regularized` | Strong regularization (L1 + L2 + high min_child_weight) |
-| `xgb_balanced` | `scale_pos_weight` computed dynamically according to each dataset's real imbalance |
-| `xgb_conservative` | Aggressive subsampling (subsample + colsample_bytree + gamma) |
-| `xgb_slow_learner` | Very low learning rate (0.01) with 500 estimators |
-
-**Total combinations:** 7 variants × 13 datasets × 2 data types = **182 models**, each packaged in `VishingModelWrapper` (the same wrapper from Notebook 7) and uploaded to `s3://poc-fraude-vishing/proyecto/modelos_xgb/{data_type}/{variant}/{technique}/{ratio}.pkl`.
-
-Includes a comparative analysis of the 182 combinations: table sorted by PR-AUC, best configuration per variant, variant × balancing-technique heatmaps, confusion matrix, Precision-Recall curve, and feature importance of the best global model.
-
-**Best result obtained:** `xgb_deep` on original data with Random Oversampling at 25% (PR-AUC ≈ 0.95, Recall ≈ 0.88, F1 ≈ 0.90).
+| Random Oversampling | 1.09M – 1.31M filas |
+| SMOTE | 1.09M – 1.31M filas |
+| Borderline SMOTE | 1.09M – 1.31M filas |
+| SMOTE + Undersampling | 985K – 1.18M filas |
 
 ---
 
-### 9. `10_Inference_Data_Generation.ipynb` — Data generation for inference simulation (AWS SageMaker)
+### 7. `7_Modeling_Vishing_AD.ipynb` — Modelado multi-algoritmo sobre datos aumentados (AWS SageMaker)
 
-**Input:** `raw_data/biocatch_sinthetic_data.csv` (50K, used only as statistical reference)
-**Output:** `data/inference_simulation/inference_100k.parquet` (100K fully synthetic sessions)
+**Entrada:** 12 datasets balanceados del Notebook 6 (S3) + dataset raw 1M como 13.° dataset + holdout de 200K sesiones extraído del 1M con `stratify` y desbalance real (~1.5% vishing).
+**Salida:** 52 modelos serializados en S3 como `VishingModelWrapper`.
 
-Generates a dataset of **100,000 fully synthetic sessions** (no row comes from the original dataset) to simulate a realistic production inference flow:
+Entrena cuatro algoritmos sobre cada uno de los 13 datasets (12 balanceados + 1 raw), con MLP reescrito en PyTorch para aprovechar GPU CUDA.
 
-- Reuses the `CorrelatedAugmenter` from Notebook 4 without modifications, training an independent augmenter per class (legitimate / vishing) on the original dataset as reference
-- Target distribution: **98,500 legitimate + 1,500 vishing (~1.5% vishing)**, consistent with the imbalance of the augmented 1M dataset
-- Adds synthetic `session_id` values (`INF-0000001`, ...) and `session_timestamp` distributed between June and November 2025 to simulate real sessions
-- Validates generation quality by comparing distributions of key features (`typing_speed_cps`, `hesitation_count`, `segmented_typing_ratio`, `data_familiarity_score`, `input_correction_count`, `transaction_amount_cop`) between the original and synthetic datasets
+| Modelo | Hiperparámetros |
+|---|---|
+| Regresión Logística | `max_iter=1000` |
+| Random Forest | `n_estimators=150`, `max_depth=10`, `n_jobs=-1` |
+| XGBoost | `tree_method='hist'`, `device='cuda'`, `max_depth=6`, `lr=0.1` |
+| MLP (PyTorch) | 64→32, `max_iter=30`, `batch_size=4096`, GPU |
+
+**Umbral óptimo.** Para cada modelo se calcula el umbral que maximiza F1 sobre la curva Precision-Recall del holdout, en lugar de fijarlo en 0.5.
+
+**Innovación de ingeniería — `VishingModelWrapper`.** Clase de empaquetado que resuelve el problema de reproducibilidad de inferencia. Encapsula en un único artefacto serializado con `joblib`:
+
+- El modelo entrenado.
+- El scaler `StandardScaler` (solo para Logística y MLP; los modelos basados en árboles se guardan sin scaler).
+- La lista exacta de features en el orden correcto.
+- El umbral óptimo de clasificación calculado por maximización de F1.
+- Metadatos: nombre del modelo, técnica y ratio.
+
+Expone tres métodos:
+
+- `predict(json)` → etiqueta binaria 0/1.
+- `predict_proba_raw(json)` → `{legitimate: float, vishing: float}`.
+- `predict_full(json)` → dict completo con etiqueta, probabilidades y umbral usado.
+
+Acepta como entrada un dict Python, string JSON o lista de dicts (batch). Valida features faltantes y lanza `ValueError` explícito, sin fallos silenciosos. Los modelos se almacenan en `s3://poc-fraude-vishing/proyecto/modelos/{técnica}/{ratio}/{modelo}.pkl`.
+
+**Mejor resultado — XGBoost + Random Oversampling 10%:**
+
+| Métrica | Valor |
+|---|---|
+| PR-AUC | 0.7511 |
+| Recall | 0.6530 |
+| Precisión | 0.7572 |
+| F1 | 0.7013 |
+| ROC-AUC | 0.9784 |
+| Umbral óptimo | 0.5921 |
+
+TN = 196,372 · FP = 628 · FN = 1,041 · TP = 1,959 sobre 200K de holdout.
+
+**Feature importance (Top 15 XGBoost por Gain).** El orden cambia respecto al dataset original: `gyro_rotation_rate_mean` (0.118), `dead_time_ratio` (0.085), `keystroke_variability` (0.066), `hour_of_day` (0.065), `dead_time_periods` (0.039), `device_tilt_variability` (0.037), `beneficiary_field_corrections` (0.032), `segmented_typing_ratio` (0.032), `transaction_amount_cop` (0.028), `avg_interkey_latency_ms` (0.027), `avg_touch_pressure` (0.027), `navigation_back_count` (0.027), `doodling_events` (0.026), `hesitation_count` (0.026), `call_overlap_duration_s` (0.025).
+
+XGBoost domina consistentemente sobre las demás familias, motivando la exploración dirigida de la Fase 3.
 
 ---
 
-## Execution Summary per Notebook
+### 8. `8_XGBoost_training.ipynb` — Experimentación dirigida con XGBoost (AWS SageMaker)
 
-| Notebook | Execution | Input | Output |
+**Entrada:** 13 datasets de data aumentada (12 balanceados + raw 1M) + 13 datasets de data original (12 balanceados + raw 50K).
+**Salida:** 182 modelos serializados en S3 como `VishingModelWrapper`.
+
+Confirmado XGBoost como el algoritmo dominante, este notebook explora **7 variantes hiperparamétricas** entrenadas sobre ambos tipos de dataset con holdouts separados:
+
+- Holdout de datos aumentados: 200K sesiones (desbalance 1.5% vishing).
+- Holdout de datos originales: 10K sesiones (desbalance 5% vishing).
+
+**Variantes exploradas:**
+
+| Variante | Descripción |
+|---|---|
+| `xgb_base` | Configuración de la Fase 2 (línea base). |
+| `xgb_deep` | Árboles profundos (`max_depth=9`), 300 estimadores, `lr=0.05`, `min_child_weight=3`. |
+| `xgb_shallow` | Árboles poco profundos (`max_depth=3`), 500 estimadores (boosting clásico). |
+| `xgb_regularized` | Regularización fuerte (L1=1.0, L2=5.0, `min_child_weight=10`, `gamma=0.3`). |
+| `xgb_balanced` | `scale_pos_weight = n_neg/n_pos` calculado por dataset en tiempo de entrenamiento. |
+| `xgb_conservative` | Subsampling agresivo (`subsample=0.7`, `colsample_bytree=0.7`, `gamma=0.5`). |
+| `xgb_slow_learner` | Aprendizaje lento (`lr=0.01`, 500 estimadores, `subsample=0.8`). |
+
+**Total:** 7 variantes × 13 datasets × 2 tipos = **182 modelos**, todos empaquetados en `VishingModelWrapper` y subidos a `s3://poc-fraude-vishing/proyecto/modelos_xgb/{tipo_data}/{variante}/{técnica}/{ratio}.pkl`.
+
+Todos los modelos se entrenaron con `tree_method='hist'` y `device='cuda'`.
+
+**Resultados consolidados por tipo de dato:**
+
+| Tipo dato | Mejor variante | Técnica | Ratio | PR-AUC | Recall | F1 |
+|---|---|---|---|---|---|---|
+| Original (50K)  | `xgb_deep` | Random Oversampling | 25% | **0.9484** | 0.878 | 0.902 |
+| Aumentado (1M)  | `xgb_deep` | Random Oversampling | 20% | 0.8964     | 0.810 | 0.822 |
+
+**Mejor modelo global.** `xgb_deep` sobre datos originales, Random Oversampling 25%, umbral 0.7264:
+
+- TN = 9,466 · FP = 34 · FN = 61 · TP = 439 (holdout de 10K, 500 vishing).
+- Recall = 0.878, Precisión = 0.928, F1 = 0.902, PR-AUC = 0.9484.
+
+Análisis incluidos: tabla de las 182 combinaciones ordenada por PR-AUC, mejor configuración por variante y tipo de data, comparación visual por métrica (PR-AUC, Recall, F1, ROC-AUC), heatmap `variante × técnica de balanceo` por tipo de data, matriz de confusión y feature importance del mejor modelo, curva Precision-Recall con óptimo F1, y una tabla CSV con todos los resultados subida a `s3://poc-fraude-vishing/proyecto/modelos_xgb/resultados_xgb_experimento.csv`.
+
+**Observación relevante.** El modelo de datos originales obtiene métricas más altas que el de datos aumentados, en parte porque su holdout tiene un desbalance del 5% (más fácil) frente al 1.5% del holdout aumentado. Ambos holdouts representan situaciones útiles: el original marca el techo teórico bajo condiciones favorables, y el aumentado se acerca más a la prevalencia realista en producción.
+
+---
+
+### AutoML — `AutoML_Vishing_AutoGluon_EN.ipynb` (rama exploratoria, no adoptada)
+
+**Objetivo.** Verificar si un flujo AutoML podía superar los resultados obtenidos con la experimentación manual multi-algoritmo y el fine-tuning dirigido de XGBoost.
+
+**Estrategia de split (crítica en este caso).**
+
+- Se separan sesiones originales (`is_synthetic=0`, 42,579) de sintéticas (`is_synthetic=1`, 957,421).
+- Los originales se dividen 40/30/30: 17,031 train / 12,774 val / 12,774 test.
+- El train mixto suma **974,452 filas** (train de originales + todas las sintéticas).
+- Val y test son **100% originales**, con tasa de vishing ≈ 5%.
+- Esto asegura que la evaluación se hace exclusivamente sobre las 2,127 sesiones vishing originales (no sobre las 12,873 sintéticas), midiendo lo que realmente importa: generalización a data real.
+
+**Configuración de AutoGluon.**
+
+- `TabularPredictor` con `problem_type='binary'` y `eval_metric='average_precision'` (optimiza PR-AUC).
+- `presets='best_quality'` (stacking multi-nivel, bagging y búsqueda de hiperparámetros).
+- `time_limit=5400` segundos (90 min) sobre GPU Tesla T4.
+- `use_bag_holdout=True`, `num_bag_folds=8`, `num_stack_levels=1`.
+
+**Resultados obtenidos (leaderboard de 14 modelos).**
+
+| Modelo | PR-AUC test | ROC-AUC test | Recall @ P=0.90 | Brier |
+|---|---|---|---|---|
+| `WeightedEnsemble_L3` | 0.1076 | 0.6667 | 0.0000 | 0.0567 |
+| `CatBoost_BAG_L2`     | 0.1075 | 0.6704 | 0.0000 | 0.0613 |
+| `LightGBM_BAG_L2`     | 0.1063 | 0.6694 | 0.0000 | 0.0618 |
+| `WeightedEnsemble_L2` | 0.1049 | 0.6632 | 0.0000 | 0.0542 |
+| `LightGBM_BAG_L1`     | 0.1043 | 0.6691 | 0.0000 | 0.0594 |
+| ... | ... | ... | ... | ... |
+| `XGBoost_BAG_L1`      | 0.0642 | 0.5743 | 0.0000 | 0.0513 |
+
+**Conclusión de la rama AutoML: no viable.**
+
+Todos los modelos del leaderboard se ubican entre PR-AUC 0.06 y 0.11 con ROC-AUC ≈ 0.66, muy por debajo de los 0.75–0.95 obtenidos en los Notebooks 7 y 8. La métrica más operacional, `recall_at_precision=0.90`, es **cero** para toda la tabla: incluso el mejor ensemble no logra ninguna combinación umbral–modelo que produzca alertas con precisión ≥ 90%. El notebook no se ejecutó hasta el final (persistencia, permutation importance, SHAP, análisis de errores) porque las métricas del leaderboard descartaron por sí solas la estrategia.
+
+**Diagnóstico probable.** El split usado por el flujo AutoML (train con 95% de filas sintéticas y evaluación 100% sobre originales) impone un salto de distribución que los modelos base (LightGBM, CatBoost, RandomForest) no consiguen cruzar sin ajuste específico, mientras que la iteración manual de los Notebooks 7 y 8 —con holdouts extraídos con `stratify` de la misma distribución de entrenamiento— produce PR-AUC 4–9× más alto. El experimento confirma el valor de la experimentación dirigida sobre la exploración automatizada en este dataset.
+
+---
+
+## Resumen de Ejecución por Notebook
+
+| Notebook | Ejecución | Entrada principal | Salida principal |
 |---|---|---|---|
-| `1_EDA.ipynb` | Local | 50K CSV | Statistics, visualizations |
-| `2_Data_Balancing_Pipeline.ipynb` | Local | 50K CSV | 12 balanced CSVs |
-| `3_Modeling_Vishing_Pipeline.ipynb` | Local | 12 CSVs + holdout | Metrics and confusion matrices |
-| `4_Biocatch_data_augmentation_AWS.ipynb` | **AWS** | 50K CSV | 1M parquet |
-| `5_EDA_augmented_data.ipynb` | Local | 1M parquet | Comparative analysis |
-| `6_Data_Balancing_AD_Pipeline.ipynb` | Local | 1M parquet | 12 balanced parquets |
-| `7_Modeling_Vishing_AD_AWS_exec v2.ipynb` | **AWS** | 12 parquets + holdout | 48 wrappers in S3 |
-| `9_XGBoost_training_exec.ipynb` | **AWS** | 26 datasets (orig + augmented) + holdouts | 182 XGBoost wrappers in S3 |
-| `10_Inference_Data_Generation.ipynb` | **AWS** | 50K CSV (reference) | 100K fully synthetic parquet |
+| `1_EDA.ipynb`                          | Local | CSV 50K | Estadísticas, visualizaciones |
+| `2_Data_Balancing_Pipeline.ipynb`      | Local | CSV 50K | 12 CSVs balanceados |
+| `3_Modeling_Vishing_Pipeline.ipynb`    | Local | 12 CSVs + holdout 10K | Métricas + matriz de confusión |
+| `4_Biocatch_data_augmentation_CTGAN.ipynb` | **AWS (GPU)** | CSV 50K | Parquet 1M + 2 CTGAN synthesizers en S3 |
+| `5_EDA_augmented_data.ipynb`           | Local | Parquet 1M + CSV 50K | Análisis comparativo y validación KS |
+| `6_Data_Balancing_AD_Pipeline.ipynb`   | Local | Parquet 1M | 12 parquets balanceados |
+| `7_Modeling_Vishing_AD.ipynb`          | **AWS (GPU)** | 13 parquets + holdout 200K | 52 wrappers en S3 |
+| `8_XGBoost_training.ipynb`             | **AWS (GPU)** | 26 datasets (orig + augm) | 182 wrappers XGBoost en S3 + CSV resultados |
+| `AutoML_Vishing_AutoGluon_EN.ipynb`    | **AWS (GPU)** | Parquet 1M | Leaderboard (rama exploratoria) |
 
 ---
 
-## Directory Structure
+## Métrica Prioritaria: PR-AUC
+
+Con desbalance de clases del orden 1.5%–5% en los holdouts, la ROC-AUC es engañosamente optimista porque penaliza poco los falsos positivos en presencia de una clase mayoritaria abrumadora. La **PR-AUC** (área bajo la curva Precisión–Recall) es la métrica de referencia del proyecto porque cuantifica directamente el trade-off entre detectar fraude (Recall) y la calidad de las alertas emitidas (Precisión). El umbral de clasificación se optimiza maximizando F1 sobre la curva PR y no se fija en 0.5, lo que explica que el umbral óptimo del mejor modelo global sea 0.7264.
+
+---
+
+## Estructura de Directorios
 
 ```
 Vishing_synth_data_GenAI/
 ├── raw_data/
-│   ├── biocatch_sinthetic_data.csv                    ← Original dataset (50K)
-│   └── diccionario_datos_biocatch_sintetico.md        ← Data dictionary
+│   ├── biocatch_sinthetic_data.csv                    ← Dataset original (50K)
+│   └── diccionario_datos_biocatch_sintetico.md        ← Diccionario de datos
 ├── data/
 │   ├── augmented_data/
-│   │   └── dataset_1M_vishing_.parquet                ← Augmented dataset (1M)
+│   │   └── dataset_1M_vishing_ctgan.parquet           ← Dataset aumentado por CTGAN (1M)
 │   └── balanced/
-│       ├── original/                                  ← 12 balanced variants of the 50K
+│       ├── original/                                  ← 12 variantes balanceadas del 50K
 │       │   ├── random_oversampling/{10,20,25}.csv
 │       │   ├── smote/{10,20,25}.csv
 │       │   ├── borderline_smote/{10,20,25}.csv
 │       │   └── smote_undersampling/{10,20,25}.csv
-│       └── augmented/                                 ← 12 balanced variants of the 1M
+│       └── augmented/                                 ← 12 variantes balanceadas del 1M
 │           ├── random_oversampling/{10,20,25}.parquet
 │           ├── smote/{10,20,25}.parquet
 │           ├── borderline_smote/{10,20,25}.parquet
 │           └── smote_undersampling/{10,20,25}.parquet
-│   └── inference_simulation/
-│       └── inference_100k.parquet                     ← Fully synthetic dataset for inference simulation
-├── modelos/                                           ← Local models (mirror of S3)
+├── ctgan_models/                                      ← CTGAN synthesizers serializados
+│   ├── ctgan_legit.pkl
+│   └── ctgan_vishing.pkl
+├── modelos/                                           ← Modelos locales (espejo de S3)
+├── automl_runs/                                       ← Corridas de AutoGluon (predictors + reports)
 ├── 1_EDA.ipynb
 ├── 2_Data_Balancing_Pipeline.ipynb
 ├── 3_Modeling_Vishing_Pipeline.ipynb
-├── 4_Biocatch_data_augmentation_AWS.ipynb
+├── 4_Biocatch_data_augmentation_CTGAN.ipynb
 ├── 5_EDA_augmented_data.ipynb
 ├── 6_Data_Balancing_AD_Pipeline.ipynb
-├── 7_Modeling_Vishing_AD_AWS_exec v2.ipynb
-├── 9_XGBoost_training_exec.ipynb
-├── 10_Inference_Data_Generation.ipynb
-├── Mejorar.md                                         ← Pending improvement notes
+├── 7_Modeling_Vishing_AD.ipynb
+├── 8_XGBoost_training.ipynb
+├── AutoML_Vishing_AutoGluon_EN.ipynb
 └── requirements.txt
 ```
 
----
-
+Bucket S3 de referencia: `s3://poc-fraude-vishing/proyecto/`.
